@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Love 출석 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- PDF 생성을 위한 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .tennis-bg { background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); }
+        .sticky-col { position: sticky; left: 0; background: white; z-index: 10; border-right: 1px solid #e2e8f0; }
+        th.sticky-col { background: #f8fafc; z-index: 20; }
+        .custom-scroll::-webkit-scrollbar { height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #4ade80; border-radius: 10px; }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        /* 버튼 선택 스타일 */
+        .option-btn { @apply px-4 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full; cursor: pointer; }
+        .option-btn.active { @apply bg-green-500 text-white border-green-500 shadow-md; }
+        .option-btn:disabled { @apply opacity-20 cursor-not-allowed bg-slate-100 text-slate-300; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- 상단 헤더 -->
+    <header class="tennis-bg py-10 px-6 text-white text-center shadow-lg relative">
+        <h1 class="text-4xl font-black tracking-tight mb-1">Love</h1>
+        <p class="text-white/80 text-sm font-medium">전북대학교 의과대학 테니스 동아리</p>
+        <button onclick="openAdminModal()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border border-white/20">
+            ADMIN
+        </button>
+    </header>
+
+    <!-- [사용자] 출석 체크 화면 -->
+    <main id="userView" class="flex-grow flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl shadow-green-100/50 border border-slate-100">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-14 h-14 bg-green-50 rounded-2xl mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M4.32 17.68a7 7 0 0 1 12.04-7.36"></path><path d="M7.64 3.64a7 7 0 0 0 12.04 7.36"></path></svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-800">반가워요! 🎾</h2>
+                <p id="distHint" class="text-slate-400 text-[10px] mt-1 italic text-center">관리자가 위치 공유 중일 때만 출석이 가능합니다.</p>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- 과정 선택 -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-400 ml-1">과정</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="course-pre" onclick="setCourse('예과')" class="option-btn">예과</button>
+                        <button type="button" id="course-med" onclick="setCourse('본과')" class="option-btn">본과</button>
+                    </div>
+                </div>
+
+                <!-- 학년 선택 -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-400 ml-1">학년</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" id="grade-1" onclick="setGrade(1)" class="option-btn">1</button>
+                        <button type="button" id="grade-2" onclick="setGrade(2)" class="option-btn">2</button>
+                        <button type="button" id="grade-3" onclick="setGrade(3)" class="option-btn">3</button>
+                        <button type="button" id="grade-4" onclick="setGrade(4)" class="option-btn">4</button>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-400 ml-1">이름</label>
+                    <input type="text" id="userName" placeholder="성함을 입력하세요" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-green-400 outline-none transition-all text-sm">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-400 ml-1">학번 (9자리)</label>
+                    <input type="number" id="studentId" placeholder="예: 202412345" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-green-400 outline-none transition-all text-sm">
+                </div>
+                <button id="submitBtn" class="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold py-5 rounded-2xl shadow-xl shadow-green-200 transition-all text-lg mt-2">
+                    출석 완료하기
+                </button>
+            </div>
+            <p id="statusMsg" class="mt-6 text-center text-sm font-bold hidden"></p>
+        </div>
+    </main>
+
+    <!-- [관리자] 대시보드 화면 -->
+    <main id="adminView" class="hidden flex-grow p-4 md:p-8">
+        <div class="max-w-6xl mx-auto bg-white rounded-[2rem] shadow-2xl h-[75vh] flex flex-col overflow-hidden border">
+            <div class="p-6 border-b flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-50/50 gap-4">
+                <div class="flex flex-col gap-1">
+                    <h2 class="font-bold text-slate-800 text-lg leading-none text-green-700">출석 현황 마스터보드</h2>
+                    <div id="locStatus" class="flex items-center gap-1.5 mt-1">
+                         <div id="locDot" class="w-2 h-2 rounded-full bg-slate-300"></div>
+                         <span id="locText" class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Location Off</span>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="locToggleBtn" onclick="toggleLocationSharing()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-blue-100">
+                        위치 공유 시작
+                    </button>
+                    <button onclick="downloadPDF()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-indigo-100 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        PDF 저장
+                    </button>
+                    <button onclick="confirmDeleteAll()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-red-100">
+                        전체 초기화
+                    </button>
+                    <button onclick="closeAdminView()" class="bg-slate-200 hover:bg-slate-300 text-slate-600 px-3 py-2 rounded-xl text-[10px] font-bold transition-all">
+                        나가기
+                    </button>
+                </div>
+            </div>
+            
+            <div class="custom-scroll overflow-auto flex-grow relative">
+                <table id="attendanceTable" class="w-full text-xs text-center border-collapse">
+                    <thead id="tHead" class="sticky top-0 z-30 shadow-sm"></thead>
+                    <tbody id="tBody" class="divide-y divide-slate-50"></tbody>
+                </table>
+                <div id="noData" class="flex flex-col items-center justify-center h-full text-slate-300 hidden py-20">
+                    <p>데이터가 없습니다.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 관리자 인증 모달 -->
+    <div id="pwdModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-[2rem] w-full max-w-xs shadow-2xl">
+            <h3 class="font-bold mb-2 text-center text-slate-800 text-xl">관리자 인증</h3>
+            <input type="password" id="pwdInput" class="w-full border-none bg-slate-100 p-4 rounded-2xl mb-4 text-center focus:ring-2 focus:ring-green-400 outline-none" placeholder="비밀번호">
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 py-4 text-slate-400 font-bold text-sm">취소</button>
+                <button id="verifyBtn" class="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold text-sm">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-8 text-center text-slate-300 text-[10px] font-medium tracking-widest mt-auto">
+        © 2024 JBNU MEDICAL SCHOOL TENNIS CLUB LOVE
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, getDoc, getDocs, deleteDoc, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'love-tennis-823e4';
+        const ADMIN_PWD = "love1234";
+        const DISTANCE_LIMIT = 50; 
+
+        let selectedCourse = null;
+        let selectedGrade = null;
+
+        signInAnonymously(auth);
+
+        // 과정 선택 함수
+        window.setCourse = (course) => {
+            selectedCourse = course;
+            
+            // 모든 과정 버튼에서 active 제거 후 선택한 버튼에 추가
+            document.getElementById('course-pre').classList.remove('active');
+            document.getElementById('course-med').classList.remove('active');
+            document.getElementById(`course-${course === '예과' ? 'pre' : 'med'}`).classList.add('active');
+            
+            // 예과 3, 4학년 비활성화 처리
+            const g3 = document.getElementById('grade-3');
+            const g4 = document.getElementById('grade-4');
+            
+            if (course === '예과') {
+                g3.disabled = true;
+                g4.disabled = true;
+                // 만약 이미 3,4학년이 선택되어 있었다면 해제
+                if (selectedGrade > 2) {
+                    selectedGrade = null;
+                    document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('active'));
+                }
+            } else {
+                g3.disabled = false;
+                g4.disabled = false;
+            }
+        };
+
+        // 학년 선택 함수
+        window.setGrade = (grade) => {
+            selectedGrade = grade;
+            // 모든 학년 버튼에서 active 제거 후 선택한 버튼에 추가
+            document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`grade-${grade}`).classList.add('active');
+        };
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; 
+            const f1 = lat1 * Math.PI/180;
+            const f2 = lat2 * Math.PI/180;
+            const df = (lat2-lat1) * Math.PI/180;
+            const dl = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(df/2) * Math.sin(df/2) +
+                      Math.cos(f1) * Math.cos(f2) *
+                      Math.sin(dl/2) * Math.sin(dl/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        document.getElementById('submitBtn').onclick = async () => {
+            const name = document.getElementById('userName').value.trim();
+            const id = document.getElementById('studentId').value.trim();
+            const btn = document.getElementById('submitBtn');
+
+            if(!selectedCourse || !selectedGrade) { showToast("과정과 학년을 선택해주세요!", "red"); return; }
+            if(!name || !id) { showToast("이름과 학번을 입력해주세요!", "red"); return; }
+            if(id.length !== 9) { showToast("학번은 반드시 9자리여야 합니다.", "red"); return; }
+
+            btn.disabled = true;
+            btn.innerText = "서버 확인 중...";
+
+            try {
+                const adminLocSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'location'));
+                const adminLoc = adminLocSnap.data();
+
+                if (!adminLoc || !adminLoc.active) {
+                    showToast("관리자가 출석 체크를 켜지 않았습니다.", "red");
+                    btn.disabled = false; btn.innerText = "출석 완료하기";
+                    return;
+                }
+
+                btn.innerText = "내 위치 확인 중...";
+                const userPos = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { 
+                        enableHighAccuracy: true, timeout: 8000 
+                    });
+                });
+
+                const dist = calculateDistance(
+                    adminLoc.lat, adminLoc.lng,
+                    userPos.coords.latitude, userPos.coords.longitude
+                );
+
+                if (dist > DISTANCE_LIMIT) {
+                    showToast(`거리가 멉니다! (현재 약 ${Math.round(dist)}m)`, "red");
+                    btn.disabled = false; btn.innerText = "출석 완료하기";
+                    return;
+                }
+
+                const today = new Date().toISOString().split('T')[0];
+                const memberKey = `${name}_${id}`;
+                
+                // 멤버 정보 저장 (학년 정보 포함)
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', memberKey), { 
+                    name, id, course: selectedCourse, grade: selectedGrade, lastUpdate: Timestamp.now() 
+                }, { merge: true });
+
+                // 출석 데이터 저장
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${memberKey}_${today}`), { 
+                    mid: memberKey, date: today, name, id, time: Timestamp.now()
+                });
+
+                showToast(`${name}님, 출석 완료! 🎾`, "green");
+                
+                // 입력폼 초기화
+                document.getElementById('userName').value = "";
+                document.getElementById('studentId').value = "";
+                selectedCourse = null; 
+                selectedGrade = null;
+                document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('grade-3').disabled = false;
+                document.getElementById('grade-4').disabled = false;
+
+            } catch (e) {
+                showToast("위치 정보를 가져올 수 없습니다.", "red");
+            } finally {
+                btn.disabled = false; btn.innerText = "출석 완료하기";
+            }
+        };
+
+        let watchId = null;
+        window.toggleLocationSharing = async () => {
+            const btn = document.getElementById('locToggleBtn');
+            const dot = document.getElementById('locDot');
+            const text = document.getElementById('locText');
+
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'location'), { active: false, updatedAt: Timestamp.now() }, { merge: true });
+                btn.innerText = "위치 공유 시작";
+                btn.className = "bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-blue-100";
+                dot.className = "w-2 h-2 rounded-full bg-slate-300";
+                text.innerText = "Location Off";
+            } else {
+                watchId = navigator.geolocation.watchPosition(async (pos) => {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'location'), {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        active: true,
+                        updatedAt: Timestamp.now()
+                    });
+                    dot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
+                    text.innerText = "Sharing Location...";
+                }, (err) => {
+                    alert("위치 접근을 허용해주세요.");
+                    watchId = null;
+                }, { enableHighAccuracy: true });
+                if (watchId !== null) {
+                    btn.innerText = "공유 중단하기";
+                    btn.className = "bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-red-100";
+                }
+            }
+        };
+
+        window.deleteMember = async (mid, name) => {
+            if (!confirm(`'${name}' 님의 모든 정보를 삭제하시겠습니까?`)) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', mid));
+                const attSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'));
+                const batch = writeBatch(db);
+                attSnap.docs.forEach(d => { if (d.data().mid === mid) batch.delete(d.ref); });
+                await batch.commit();
+            } catch (e) { alert('오류가 발생했습니다.'); }
+        };
+
+        window.confirmDeleteAll = async () => {
+            if (!confirm("모든 데이터를 초기화하시겠습니까?")) return;
+            const check = prompt("관리자 비밀번호를 입력하세요.");
+            if (check !== ADMIN_PWD) { alert("비밀번호 불일치"); return; }
+            try {
+                const membersSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'members'));
+                const attendSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'));
+                const batch = writeBatch(db);
+                membersSnap.docs.forEach(d => batch.delete(d.ref));
+                attendSnap.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            } catch (e) { alert('오류 발생'); }
+        };
+
+        window.downloadPDF = () => {
+            const { jsPDF } = window.jspdf;
+            const docPdf = new jsPDF('l', 'mm', 'a4');
+            docPdf.text('Love Tennis Club Attendance Report', 14, 15);
+            docPdf.autoTable({
+                html: '#attendanceTable',
+                startY: 20,
+                theme: 'grid',
+                styles: { fontSize: 8, font: 'helvetica' },
+                headStyles: { fillColor: [74, 222, 128] },
+                columnStyles: { 0: { cellWidth: 0 } },
+                didParseCell: function(data) { if (data.column.index === 0) data.cell.text = ''; }
+            });
+            docPdf.save(`Love_Attendance_${new Date().toISOString().split('T')[0]}.pdf`);
+        };
+
+        window.openAdminModal = () => document.getElementById('pwdModal').classList.remove('hidden');
+        window.closeModal = () => document.getElementById('pwdModal').classList.add('hidden');
+        window.closeAdminView = () => {
+            document.getElementById('adminView').classList.add('hidden');
+            document.getElementById('userView').classList.remove('hidden');
+        };
+        document.getElementById('verifyBtn').onclick = () => {
+            if(document.getElementById('pwdInput').value === ADMIN_PWD) {
+                document.getElementById('pwdModal').classList.add('hidden');
+                document.getElementById('userView').classList.add('hidden');
+                document.getElementById('adminView').classList.remove('hidden');
+                document.getElementById('pwdInput').value = "";
+                startRealtimeUpdate();
+            } else { alert("비밀번호가 틀렸습니다."); }
+        };
+
+        function startRealtimeUpdate() {
+            let members = []; let attendance = [];
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'members'), (snap) => {
+                members = snap.docs.map(d => ({...d.data(), mid: d.id})); renderTable(members, attendance);
+            });
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), (snap) => {
+                attendance = snap.docs.map(d => d.data()); renderTable(members, attendance);
+            });
+        }
+
+        function renderTable(ms, as) {
+            const tHead = document.getElementById('tHead');
+            const tBody = document.getElementById('tBody');
+            const noData = document.getElementById('noData');
+            if(ms.length === 0) { noData.classList.remove('hidden'); tHead.innerHTML = ""; tBody.innerHTML = ""; return; }
+            noData.classList.add('hidden');
+
+            const dates = [...new Set(as.map(a => a.date))].sort().reverse();
+            let h = `<tr class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px]">
+                <th class="p-4 sticky-col border-b text-slate-600">성명 (정보)</th>`;
+            dates.forEach(d => h += `<th class="p-4 border-b border-l border-slate-100 min-w-[70px]">${d.slice(5).replace('-', '/')}</th>`);
+            tHead.innerHTML = h + `</tr>`;
+
+            // 본과/예과 그룹화 및 학년순 정렬
+            const bonGwa = ms.filter(m => m.course === '본과').sort((a,b) => a.grade - b.grade);
+            const yeGwa = ms.filter(m => m.course === '예과').sort((a,b) => a.grade - b.grade);
+            const others = ms.filter(m => m.course !== '예과' && m.course !== '본과');
+
+            let bHtml = "";
+            const genRows = (list, title) => {
+                if(list.length === 0) return "";
+                let s = `<tr class="bg-slate-100/50"><td colspan="${dates.length + 1}" class="p-2 pl-4 text-left font-bold text-slate-500 border-y sticky left-0 shadow-sm text-[9px] uppercase">${title}</td></tr>`;
+                list.forEach(m => {
+                    const k = m.mid;
+                    const info = m.course ? `${m.course} ${m.grade}` : m.id;
+                    s += `<tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 sticky-col font-bold text-slate-700 text-xs whitespace-nowrap flex items-center gap-3">
+                            <button onclick="deleteMember('${k}', '${m.name}')" class="text-red-300 hover:text-red-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                            </button>
+                            ${m.name} <span class="text-[9px] text-slate-400 font-normal">(${info})</span>
+                        </td>`;
+                    dates.forEach(d => {
+                        const ok = as.some(a => a.mid === k && a.date === d);
+                        s += `<td class="p-4 border-l border-slate-50"><div class="w-2.5 h-2.5 mx-auto rounded-full ${ok?'bg-green-500 shadow-sm shadow-green-200':'bg-red-300/30'}"></div></td>`;
+                    });
+                    s += `</tr>`;
+                });
+                return s;
+            };
+            bHtml += genRows(bonGwa, "본과 (Medical School)");
+            bHtml += genRows(yeGwa, "예과 (Pre-Med)");
+            bHtml += genRows(others, "기타");
+            tBody.innerHTML = bHtml;
+        }
+
+        function showToast(text, color) {
+            const msg = document.getElementById('statusMsg');
+            msg.innerText = text;
+            msg.className = `mt-6 text-center text-sm font-bold block text-${color}-600 animate-pulse`;
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
+</html>
