@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- PDF 생성을 위한 라이브러리들 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- 한글 깨짐 방지를 위해 html2canvas 추가 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -100,7 +99,6 @@
                 </div>
             </div>
             <div class="custom-scroll overflow-auto flex-grow relative">
-                <!-- PDF 저장 시 table 요소 자체를 캡처합니다 -->
                 <table id="attendanceTable" class="w-full text-xs text-center border-collapse bg-white">
                     <thead id="tHead" class="sticky top-0 z-30 shadow-sm"></thead>
                     <tbody id="tBody" class="divide-y divide-slate-50"></tbody>
@@ -213,43 +211,23 @@
             }
         };
 
-        // --- 수정된 PDF 다운로드 함수 (html2canvas 기반) ---
         window.downloadPDF = async () => {
             const table = document.getElementById('attendanceTable');
             const { jsPDF } = window.jspdf;
-            
-            showToast("PDF를 생성 중입니다. 잠시만 기다려주세요...", "blue");
-
+            showToast("PDF 생성 중...", "blue");
             try {
-                // html2canvas로 테이블을 이미지로 변환 (한글 깨짐 해결)
-                const canvas = await html2canvas(table, {
-                    scale: 2, // 고해상도
-                    useCORS: true,
-                    backgroundColor: "#ffffff",
-                    // 삭제 버튼 아이콘 등 특정 요소 제외 처리
-                    ignoreElements: (el) => el.classList.contains('no-print')
-                });
-
+                const canvas = await html2canvas(table, { scale: 2, useCORS: true, backgroundColor: "#ffffff", ignoreElements: (el) => el.classList.contains('no-print') });
                 const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('l', 'mm', 'a4'); // 가로 모드
-                
+                const pdf = new jsPDF('l', 'mm', 'a4');
                 const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                
-                // 이미지 비율 계산하여 배치
-                const imgWidth = pageWidth - 20; // 좌우 여백 10mm씩
+                const imgWidth = pageWidth - 20;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
                 pdf.setFontSize(16);
                 pdf.text('Love Tennis Club Attendance Report', 10, 15);
                 pdf.addImage(imgData, 'PNG', 10, 25, imgWidth, imgHeight);
-                
                 pdf.save(`Love_Attendance_${new Date().toISOString().split('T')[0]}.pdf`);
-                showToast("PDF 저장 완료!", "green");
-            } catch (e) {
-                console.error(e);
-                showToast("PDF 생성 중 오류가 발생했습니다.", "red");
-            }
+                showToast("저장 완료!", "green");
+            } catch (e) { showToast("PDF 오류 발생", "red"); }
         };
 
         window.confirmDeleteAll = async () => {
@@ -286,24 +264,19 @@
             const name = document.getElementById('userName').value.trim();
             const id = document.getElementById('studentId').value.trim();
             if(!selectedCourse || !selectedGrade || !name || id.length !== 9) return showToast("정보를 정확히 입력해주세요!", "red");
-
             const btn = document.getElementById('submitBtn');
             btn.disabled = true; btn.innerText = "서버 확인 중...";
-
             try {
                 const adminLocSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'location'));
                 const adminLoc = adminLocSnap.data();
                 if (!adminLoc || !adminLoc.active) throw new Error("관리자가 출석을 시작하지 않았습니다.");
-
                 const userPos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 8000 }));
                 const dist = calculateDistance(adminLoc.lat, adminLoc.lng, userPos.coords.latitude, userPos.coords.longitude);
                 if (dist > 50) throw new Error(`거리가 멉니다! (약 ${Math.round(dist)}m)`);
-
                 const today = new Date().toISOString().split('T')[0];
                 const memberKey = `${name}_${id}`;
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', memberKey), { name, id, course: selectedCourse, grade: selectedGrade, lastUpdate: Timestamp.now() }, { merge: true });
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${memberKey}_${today}`), { mid: memberKey, date: today, name, id, time: Timestamp.now() });
-
                 showToast(`${name}님, 출석 완료! 🎾`, "green");
                 document.getElementById('userName').value = ""; document.getElementById('studentId').value = "";
                 selectedCourse = null; selectedGrade = null;
@@ -336,19 +309,21 @@
             document.getElementById('noData').classList.add('hidden');
 
             const dates = [...new Set(as.map(a => a.date))].sort().reverse();
-            let h = `<tr class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px]"><th class="p-4 sticky-col border-b text-slate-600 text-left">성명 (학번 | 정보)</th>`;
+            let h = `<tr class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px]"><th class="p-4 sticky-col border-b text-slate-600 text-left">성명 (학번 | 학년)</th>`;
             dates.forEach(d => h += `<th class="p-4 border-b border-l border-slate-100 min-w-[70px]">${d.slice(5).replace('-', '/')}</th>`);
             tHead.innerHTML = h + `</tr>`;
 
             const buildRows = (list, title) => {
                 if(list.length === 0) return "";
-                let s = `<tr class="bg-slate-100/50"><td colspan="${dates.length+1}" class="p-2 pl-4 text-left font-bold text-slate-500 text-[9px] uppercase">${title}</td></tr>`;
+                let s = `<tr class="bg-slate-100/50"><td colspan="${dates.length+1}" class="p-2 pl-4 text-left font-bold text-slate-500 text-[9px] uppercase border-y">${title}</td></tr>`;
                 list.forEach(m => {
+                    // 학년 표시 텍스트 생성 (본4, 예2 등)
+                    const courseKey = m.course === '본과' ? '본' : '예';
+                    const gradeStr = `${courseKey}${m.grade}`;
+                    
                     s += `<tr class="hover:bg-slate-50 transition-colors"><td class="p-4 sticky-col font-bold text-slate-700 text-xs whitespace-nowrap flex items-center gap-3">
-                        <button onclick="window.deleteMember('${m.mid}', '${m.name}')" class="text-red-300 hover:text-red-600 no-print">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                        </button>
-                        ${m.name} <span class="text-[9px] text-slate-400 font-normal">(${m.id} | ${m.course} ${m.grade})</span></td>`;
+                        <button onclick="window.deleteMember('${m.mid}', '${m.name}')" class="text-red-300 hover:text-red-600 no-print"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+                        ${m.name} <span class="text-[9px] text-slate-400 font-normal">(${m.id} | ${gradeStr})</span></td>`;
                     dates.forEach(d => {
                         const ok = as.some(a => a.mid === m.mid && a.date === d);
                         s += `<td class="p-4 border-l border-slate-50"><div class="w-2.5 h-2.5 mx-auto rounded-full ${ok?'bg-green-500':'bg-red-300/30'}"></div></td>`;
@@ -357,7 +332,30 @@
                 });
                 return s;
             };
-            tBody.innerHTML = buildRows(ms.filter(m => m.course==='본과').sort((a,b)=>a.grade-b.grade), "Medical School") + buildRows(ms.filter(m => m.course==='예과').sort((a,b)=>a.grade-b.grade), "Pre-Med") + buildRows(ms.filter(m => m.course!=='예과'&&m.course!=='본과'), "Others");
+
+            let fullHtml = "";
+            
+            // 본과 4학년(본4)부터 역순으로 정렬하여 표시
+            // 본4(6) -> 본1(3) -> 예2(2) -> 예1(1)
+            for(let level = 6; level >= 1; level--) {
+                let filtered;
+                let groupTitle;
+                
+                if (level > 2) { // 본과 (본1=3, 본2=4, 본3=5, 본4=6)
+                    const bonGrade = level - 2;
+                    filtered = ms.filter(m => m.course === '본과' && m.grade == bonGrade);
+                    groupTitle = `본과 ${bonGrade}학년 (본${bonGrade})`;
+                } else { // 예과 (예1=1, 예2=2)
+                    filtered = ms.filter(m => m.course === '예과' && m.grade == level);
+                    groupTitle = `예과 ${level}학년 (예${level})`;
+                }
+                
+                fullHtml += buildRows(filtered.sort((a,b)=>a.name.localeCompare(b.name)), groupTitle);
+            }
+            
+            fullHtml += buildRows(ms.filter(m => m.course!=='예과'&&m.course!=='본과'), "기타 / 졸업생");
+
+            tBody.innerHTML = fullHtml;
         }
 
         function showToast(text, color) {
