@@ -19,28 +19,41 @@
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* 버튼 활성화 시 스타일 (Tailwind @apply 대신 표준 CSS 사용) */
+        /* 버튼 활성화 시 스타일 */
         .option-btn-active {
             background-color: #22c55e !important;
             color: white !important;
             border-color: #22c55e !important;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
+        
+        /* 비활성화 버튼 스타일 */
+        .btn-disabled {
+            opacity: 0.2 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
+
+        /* 클릭 가능한 요소의 우선순위 보장 */
+        header button, main button {
+            position: relative;
+            z-index: 50;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
 
     <!-- 상단 헤더 -->
-    <header class="tennis-bg py-10 px-6 text-white text-center shadow-lg relative">
+    <header class="tennis-bg py-10 px-6 text-white text-center shadow-lg relative z-40">
         <h1 class="text-4xl font-black tracking-tight mb-1">Love</h1>
         <p class="text-white/80 text-sm font-medium">전북대학교 의과대학 테니스 동아리</p>
-        <button onclick="openAdminModal()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border border-white/20">
+        <button onclick="window.openAdminModal()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border border-white/20 cursor-pointer">
             ADMIN
         </button>
     </header>
 
     <!-- [사용자] 출석 체크 화면 -->
-    <main id="userView" class="flex-grow flex items-center justify-center p-6">
+    <main id="userView" class="flex-grow flex items-center justify-center p-6 relative z-10">
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl shadow-green-100/50 border border-slate-100">
             <div class="text-center mb-6">
                 <div class="inline-flex items-center justify-center w-14 h-14 bg-green-50 rounded-2xl mb-3">
@@ -55,8 +68,8 @@
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold text-slate-400 ml-1">과정</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="course-pre" onclick="setCourse('예과')" class="px-4 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">예과</button>
-                        <button type="button" id="course-med" onclick="setCourse('본과')" class="px-4 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">본과</button>
+                        <button type="button" id="course-pre" onclick="window.setCourse('예과')" class="px-4 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full cursor-pointer">예과</button>
+                        <button type="button" id="course-med" onclick="window.setCourse('본과')" class="px-4 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full cursor-pointer">본과</button>
                     </div>
                 </div>
 
@@ -64,10 +77,10 @@
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold text-slate-400 ml-1">학년</label>
                     <div class="grid grid-cols-4 gap-2">
-                        <button type="button" id="grade-1" onclick="setGrade(1)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">1</button>
-                        <button type="button" id="grade-2" onclick="setGrade(2)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">2</button>
-                        <button type="button" id="grade-3" onclick="setGrade(3)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">3</button>
-                        <button type="button" id="grade-4" onclick="setGrade(4)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">4</button>
+                        <button type="button" id="grade-1" onclick="window.setGrade(1)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full cursor-pointer">1</button>
+                        <button type="button" id="grade-2" onclick="window.setGrade(2)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full cursor-pointer">2</button>
+                        <button type="button" id="grade-3" onclick="window.setGrade(3)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full cursor-pointer">3</button>
+                        <button type="button" id="grade-4" onclick="window.setGrade(4)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full cursor-pointer">4</button>
                     </div>
                 </div>
 
@@ -79,7 +92,7 @@
                     <label class="text-xs font-bold text-slate-400 ml-1">학번 (9자리)</label>
                     <input type="number" id="studentId" placeholder="예: 202412345" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-green-400 outline-none transition-all text-sm">
                 </div>
-                <button id="submitBtn" class="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold py-5 rounded-2xl shadow-xl shadow-green-200 transition-all text-lg mt-2">
+                <button id="submitBtn" class="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold py-5 rounded-2xl shadow-xl shadow-green-200 transition-all text-lg mt-2 cursor-pointer">
                     출석 완료하기
                 </button>
             </div>
@@ -88,7 +101,7 @@
     </main>
 
     <!-- [관리자] 대시보드 화면 -->
-    <main id="adminView" class="hidden flex-grow p-4 md:p-8">
+    <main id="adminView" class="hidden flex-grow p-4 md:p-8 relative z-10">
         <div class="max-w-6xl mx-auto bg-white rounded-[2rem] shadow-2xl h-[75vh] flex flex-col overflow-hidden border">
             <div class="p-6 border-b flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-50/50 gap-4">
                 <div class="flex flex-col gap-1">
@@ -99,17 +112,16 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button id="locToggleBtn" onclick="toggleLocationSharing()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-blue-100">
+                    <button id="locToggleBtn" onclick="window.toggleLocationSharing()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-blue-100 cursor-pointer">
                         위치 공유 시작
                     </button>
-                    <button onclick="downloadPDF()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-indigo-100 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <button onclick="window.downloadPDF()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-indigo-100 flex items-center gap-1 cursor-pointer">
                         PDF 저장
                     </button>
-                    <button onclick="confirmDeleteAll()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-red-100">
+                    <button onclick="window.confirmDeleteAll()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-red-100 cursor-pointer">
                         전체 초기화
                     </button>
-                    <button onclick="closeAdminView()" class="bg-slate-200 hover:bg-slate-300 text-slate-600 px-3 py-2 rounded-xl text-[10px] font-bold transition-all">
+                    <button onclick="window.closeAdminView()" class="bg-slate-200 hover:bg-slate-300 text-slate-600 px-3 py-2 rounded-xl text-[10px] font-bold transition-all cursor-pointer">
                         나가기
                     </button>
                 </div>
@@ -133,8 +145,8 @@
             <h3 class="font-bold mb-2 text-center text-slate-800 text-xl">관리자 인증</h3>
             <input type="password" id="pwdInput" class="w-full border-none bg-slate-100 p-4 rounded-2xl mb-4 text-center focus:ring-2 focus:ring-green-400 outline-none" placeholder="비밀번호">
             <div class="flex gap-3">
-                <button onclick="closeModal()" class="flex-1 py-4 text-slate-400 font-bold text-sm">취소</button>
-                <button id="verifyBtn" class="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold text-sm">확인</button>
+                <button onclick="window.closeModal()" class="flex-1 py-4 text-slate-400 font-bold text-sm cursor-pointer">취소</button>
+                <button id="verifyBtn" class="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold text-sm cursor-pointer">확인</button>
             </div>
         </div>
     </div>
@@ -161,11 +173,25 @@
 
         signInAnonymously(auth);
 
-        // 과정 선택 함수
+        // --- 전역 함수 등록 (HTML onclick 호환) ---
+
+        window.openAdminModal = () => {
+            document.getElementById('pwdModal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => {
+            document.getElementById('pwdModal').classList.add('hidden');
+        };
+
+        window.closeAdminView = () => {
+            document.getElementById('adminView').classList.add('hidden');
+            document.getElementById('userView').classList.remove('hidden');
+        };
+
         window.setCourse = (course) => {
             selectedCourse = course;
             
-            // UI 초기화 및 활성화
+            // 버튼 상태 시각화
             document.getElementById('course-pre').classList.remove('option-btn-active');
             document.getElementById('course-med').classList.remove('option-btn-active');
             document.getElementById(`course-${course === '예과' ? 'pre' : 'med'}`).classList.add('option-btn-active');
@@ -175,30 +201,29 @@
             const g4 = document.getElementById('grade-4');
             
             if (course === '예과') {
-                g3.disabled = true;
-                g4.disabled = true;
-                g3.style.opacity = "0.2";
-                g4.style.opacity = "0.2";
+                g3.classList.add('btn-disabled');
+                g4.classList.add('btn-disabled');
                 // 만약 이미 3,4학년이 선택되어 있었다면 해제
                 if (selectedGrade > 2) {
                     selectedGrade = null;
                     document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('option-btn-active'));
                 }
             } else {
-                g3.disabled = false;
-                g4.disabled = false;
-                g3.style.opacity = "1";
-                g4.style.opacity = "1";
+                g3.classList.remove('btn-disabled');
+                g4.classList.remove('btn-disabled');
             }
         };
 
-        // 학년 선택 함수
         window.setGrade = (grade) => {
+            // 예과인 경우 3, 4학년 클릭 차단 (혹시 모를 우회 방지)
+            if (selectedCourse === '예과' && (grade === 3 || grade === 4)) return;
+
             selectedGrade = grade;
-            // UI 초기화 및 활성화
             document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('option-btn-active'));
             document.getElementById(`grade-${grade}`).classList.add('option-btn-active');
         };
+
+        // --- 출석 로직 ---
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371e3; 
@@ -248,7 +273,7 @@
                 );
 
                 if (dist > DISTANCE_LIMIT) {
-                    showToast(`거리가 멉니다! (현재 약 ${Math.round(dist)}m)`, "red");
+                    showToast(`거리가 너무 멉니다! (현재 약 ${Math.round(dist)}m)`, "red");
                     btn.disabled = false; btn.innerText = "출석 완료하기";
                     return;
                 }
@@ -256,7 +281,7 @@
                 const today = new Date().toISOString().split('T')[0];
                 const memberKey = `${name}_${id}`;
                 
-                // 멤버 정보 저장 (과정, 학년 포함)
+                // 멤버 정보 저장
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', memberKey), { 
                     name, id, course: selectedCourse, grade: selectedGrade, lastUpdate: Timestamp.now() 
                 }, { merge: true });
@@ -268,23 +293,23 @@
 
                 showToast(`${name}님, 출석 성공! 🎾`, "green");
                 
-                // 폼 초기화
+                // 초기화
                 document.getElementById('userName').value = "";
                 document.getElementById('studentId').value = "";
                 selectedCourse = null; selectedGrade = null;
-                document.querySelectorAll('[id^="course-"]').forEach(btn => btn.classList.remove('option-btn-active'));
-                document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('option-btn-active'));
-                document.getElementById('grade-3').disabled = false;
-                document.getElementById('grade-4').disabled = false;
-                document.getElementById('grade-3').style.opacity = "1";
-                document.getElementById('grade-4').style.opacity = "1";
+                document.querySelectorAll('[id^="course-"]').forEach(b => b.classList.remove('option-btn-active'));
+                document.querySelectorAll('[id^="grade-"]').forEach(b => b.classList.remove('option-btn-active'));
+                document.getElementById('grade-3').classList.remove('btn-disabled');
+                document.getElementById('grade-4').classList.remove('btn-disabled');
 
             } catch (e) {
-                showToast("위치 정보를 가져올 수 없습니다.", "red");
+                showToast("위치 정보를 가져올 수 없습니다. GPS를 켜주세요.", "red");
             } finally {
                 btn.disabled = false; btn.innerText = "출석 완료하기";
             }
         };
+
+        // --- 관리자 기능 ---
 
         let watchId = null;
         window.toggleLocationSharing = async () => {
@@ -297,7 +322,7 @@
                 watchId = null;
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'location'), { active: false, updatedAt: Timestamp.now() }, { merge: true });
                 btn.innerText = "위치 공유 시작";
-                btn.className = "bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-blue-100";
+                btn.className = "bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-blue-100 cursor-pointer";
                 dot.className = "w-2 h-2 rounded-full bg-slate-300";
                 text.innerText = "Location Off";
             } else {
@@ -316,7 +341,7 @@
                 }, { enableHighAccuracy: true });
                 if (watchId !== null) {
                     btn.innerText = "공유 중단하기";
-                    btn.className = "bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-red-100";
+                    btn.className = "bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all shadow-md shadow-red-100 cursor-pointer";
                 }
             }
         };
@@ -354,20 +379,13 @@
                 html: '#attendanceTable',
                 startY: 20,
                 theme: 'grid',
-                styles: { fontSize: 8, font: 'helvetica' },
+                styles: { fontSize: 8 },
                 headStyles: { fillColor: [74, 222, 128] },
-                columnStyles: { 0: { cellWidth: 0 } },
-                didParseCell: function(data) { if (data.column.index === 0) data.cell.text = ''; }
+                columnStyles: { 0: { cellWidth: 'auto' } }
             });
             docPdf.save(`Love_Attendance_${new Date().toISOString().split('T')[0]}.pdf`);
         };
 
-        window.openAdminModal = () => document.getElementById('pwdModal').classList.remove('hidden');
-        window.closeModal = () => document.getElementById('pwdModal').classList.add('hidden');
-        window.closeAdminView = () => {
-            document.getElementById('adminView').classList.add('hidden');
-            document.getElementById('userView').classList.remove('hidden');
-        };
         document.getElementById('verifyBtn').onclick = () => {
             if(document.getElementById('pwdInput').value === ADMIN_PWD) {
                 document.getElementById('pwdModal').classList.add('hidden');
@@ -397,11 +415,10 @@
 
             const dates = [...new Set(as.map(a => a.date))].sort().reverse();
             let h = `<tr class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px]">
-                <th class="p-4 sticky-col border-b text-slate-600">성명 (정보)</th>`;
+                <th class="p-4 sticky-col border-b text-slate-600 text-left">성명 (정보)</th>`;
             dates.forEach(d => h += `<th class="p-4 border-b border-l border-slate-100 min-w-[70px]">${d.slice(5).replace('-', '/')}</th>`);
             tHead.innerHTML = h + `</tr>`;
 
-            // 그룹화 및 정렬
             const bonGwa = ms.filter(m => m.course === '본과').sort((a,b) => a.grade - b.grade);
             const yeGwa = ms.filter(m => m.course === '예과').sort((a,b) => a.grade - b.grade);
             const others = ms.filter(m => m.course !== '예과' && m.course !== '본과');
@@ -415,7 +432,7 @@
                     const info = m.course ? `${m.course} ${m.grade}` : m.id;
                     s += `<tr class="hover:bg-slate-50 transition-colors">
                         <td class="p-4 sticky-col font-bold text-slate-700 text-xs whitespace-nowrap flex items-center gap-3">
-                            <button onclick="deleteMember('${k}', '${m.name}')" class="text-red-300 hover:text-red-600 transition-colors">
+                            <button onclick="window.deleteMember('${k}', '${m.name}')" class="text-red-300 hover:text-red-600 transition-colors cursor-pointer">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                             </button>
                             ${m.name} <span class="text-[9px] text-slate-400 font-normal">(${info})</span>
@@ -430,7 +447,7 @@
             };
             bHtml += genRows(bonGwa, "Medical School");
             bHtml += genRows(yeGwa, "Pre-Med");
-            bHtml += genRows(others, "기타");
+            bHtml += genRows(others, "Others");
             tBody.innerHTML = bHtml;
         }
 
