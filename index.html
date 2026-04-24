@@ -19,10 +19,13 @@
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* 버튼 선택 스타일 */
-        .option-btn { @apply px-4 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full; cursor: pointer; }
-        .option-btn.active { @apply bg-green-500 text-white border-green-500 shadow-md; }
-        .option-btn:disabled { @apply opacity-20 cursor-not-allowed bg-slate-100 text-slate-300; }
+        /* 버튼 활성화 시 스타일 (Tailwind @apply 대신 표준 CSS 사용) */
+        .option-btn-active {
+            background-color: #22c55e !important;
+            color: white !important;
+            border-color: #22c55e !important;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
@@ -52,8 +55,8 @@
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold text-slate-400 ml-1">과정</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="course-pre" onclick="setCourse('예과')" class="option-btn">예과</button>
-                        <button type="button" id="course-med" onclick="setCourse('본과')" class="option-btn">본과</button>
+                        <button type="button" id="course-pre" onclick="setCourse('예과')" class="px-4 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">예과</button>
+                        <button type="button" id="course-med" onclick="setCourse('본과')" class="px-4 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">본과</button>
                     </div>
                 </div>
 
@@ -61,10 +64,10 @@
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold text-slate-400 ml-1">학년</label>
                     <div class="grid grid-cols-4 gap-2">
-                        <button type="button" id="grade-1" onclick="setGrade(1)" class="option-btn">1</button>
-                        <button type="button" id="grade-2" onclick="setGrade(2)" class="option-btn">2</button>
-                        <button type="button" id="grade-3" onclick="setGrade(3)" class="option-btn">3</button>
-                        <button type="button" id="grade-4" onclick="setGrade(4)" class="option-btn">4</button>
+                        <button type="button" id="grade-1" onclick="setGrade(1)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">1</button>
+                        <button type="button" id="grade-2" onclick="setGrade(2)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">2</button>
+                        <button type="button" id="grade-3" onclick="setGrade(3)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">3</button>
+                        <button type="button" id="grade-4" onclick="setGrade(4)" class="px-2 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl transition-all border-2 border-transparent text-sm w-full">4</button>
                     </div>
                 </div>
 
@@ -162,10 +165,10 @@
         window.setCourse = (course) => {
             selectedCourse = course;
             
-            // 모든 과정 버튼에서 active 제거 후 선택한 버튼에 추가
-            document.getElementById('course-pre').classList.remove('active');
-            document.getElementById('course-med').classList.remove('active');
-            document.getElementById(`course-${course === '예과' ? 'pre' : 'med'}`).classList.add('active');
+            // UI 초기화 및 활성화
+            document.getElementById('course-pre').classList.remove('option-btn-active');
+            document.getElementById('course-med').classList.remove('option-btn-active');
+            document.getElementById(`course-${course === '예과' ? 'pre' : 'med'}`).classList.add('option-btn-active');
             
             // 예과 3, 4학년 비활성화 처리
             const g3 = document.getElementById('grade-3');
@@ -174,23 +177,27 @@
             if (course === '예과') {
                 g3.disabled = true;
                 g4.disabled = true;
+                g3.style.opacity = "0.2";
+                g4.style.opacity = "0.2";
                 // 만약 이미 3,4학년이 선택되어 있었다면 해제
                 if (selectedGrade > 2) {
                     selectedGrade = null;
-                    document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('active'));
+                    document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('option-btn-active'));
                 }
             } else {
                 g3.disabled = false;
                 g4.disabled = false;
+                g3.style.opacity = "1";
+                g4.style.opacity = "1";
             }
         };
 
         // 학년 선택 함수
         window.setGrade = (grade) => {
             selectedGrade = grade;
-            // 모든 학년 버튼에서 active 제거 후 선택한 버튼에 추가
-            document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`grade-${grade}`).classList.add('active');
+            // UI 초기화 및 활성화
+            document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('option-btn-active'));
+            document.getElementById(`grade-${grade}`).classList.add('option-btn-active');
         };
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -223,7 +230,7 @@
                 const adminLoc = adminLocSnap.data();
 
                 if (!adminLoc || !adminLoc.active) {
-                    showToast("관리자가 출석 체크를 켜지 않았습니다.", "red");
+                    showToast("관리자가 출석 체크를 시작하지 않았습니다.", "red");
                     btn.disabled = false; btn.innerText = "출석 완료하기";
                     return;
                 }
@@ -249,7 +256,7 @@
                 const today = new Date().toISOString().split('T')[0];
                 const memberKey = `${name}_${id}`;
                 
-                // 멤버 정보 저장 (학년 정보 포함)
+                // 멤버 정보 저장 (과정, 학년 포함)
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', memberKey), { 
                     name, id, course: selectedCourse, grade: selectedGrade, lastUpdate: Timestamp.now() 
                 }, { merge: true });
@@ -259,16 +266,18 @@
                     mid: memberKey, date: today, name, id, time: Timestamp.now()
                 });
 
-                showToast(`${name}님, 출석 완료! 🎾`, "green");
+                showToast(`${name}님, 출석 성공! 🎾`, "green");
                 
-                // 입력폼 초기화
+                // 폼 초기화
                 document.getElementById('userName').value = "";
                 document.getElementById('studentId').value = "";
-                selectedCourse = null; 
-                selectedGrade = null;
-                document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+                selectedCourse = null; selectedGrade = null;
+                document.querySelectorAll('[id^="course-"]').forEach(btn => btn.classList.remove('option-btn-active'));
+                document.querySelectorAll('[id^="grade-"]').forEach(btn => btn.classList.remove('option-btn-active'));
                 document.getElementById('grade-3').disabled = false;
                 document.getElementById('grade-4').disabled = false;
+                document.getElementById('grade-3').style.opacity = "1";
+                document.getElementById('grade-4').style.opacity = "1";
 
             } catch (e) {
                 showToast("위치 정보를 가져올 수 없습니다.", "red");
@@ -392,7 +401,7 @@
             dates.forEach(d => h += `<th class="p-4 border-b border-l border-slate-100 min-w-[70px]">${d.slice(5).replace('-', '/')}</th>`);
             tHead.innerHTML = h + `</tr>`;
 
-            // 본과/예과 그룹화 및 학년순 정렬
+            // 그룹화 및 정렬
             const bonGwa = ms.filter(m => m.course === '본과').sort((a,b) => a.grade - b.grade);
             const yeGwa = ms.filter(m => m.course === '예과').sort((a,b) => a.grade - b.grade);
             const others = ms.filter(m => m.course !== '예과' && m.course !== '본과');
@@ -419,8 +428,8 @@
                 });
                 return s;
             };
-            bHtml += genRows(bonGwa, "본과 (Medical School)");
-            bHtml += genRows(yeGwa, "예과 (Pre-Med)");
+            bHtml += genRows(bonGwa, "Medical School");
+            bHtml += genRows(yeGwa, "Pre-Med");
             bHtml += genRows(others, "기타");
             tBody.innerHTML = bHtml;
         }
