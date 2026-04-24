@@ -299,7 +299,7 @@
             document.getElementById('noData').classList.add('hidden');
 
             const dates = [...new Set(as.map(a => a.date))].sort().reverse();
-            let h = `<tr class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px]"><th class="p-4 sticky-col border-b text-slate-600 text-left">성명 (정보)</th>`;
+            let h = `<tr class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px]"><th class="p-4 sticky-col border-b text-slate-600 text-left">성명 (학번 | 정보)</th>`;
             dates.forEach(d => h += `<th class="p-4 border-b border-l border-slate-100 min-w-[70px]">${d.slice(5).replace('-', '/')}</th>`);
             tHead.innerHTML = h + `</tr>`;
 
@@ -309,7 +309,7 @@
                 list.forEach(m => {
                     s += `<tr class="hover:bg-slate-50 transition-colors"><td class="p-4 sticky-col font-bold text-slate-700 text-xs whitespace-nowrap flex items-center gap-3">
                         <button onclick="window.deleteMember('${m.mid}', '${m.name}')" class="text-red-300 hover:text-red-600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
-                        ${m.name} <span class="text-[9px] text-slate-400 font-normal">(${m.course} ${m.grade})</span></td>`;
+                        ${m.name} <span class="text-[9px] text-slate-400 font-normal">(${m.id} | ${m.course} ${m.grade})</span></td>`;
                     dates.forEach(d => {
                         const ok = as.some(a => a.mid === m.mid && a.date === d);
                         s += `<td class="p-4 border-l border-slate-50"><div class="w-2.5 h-2.5 mx-auto rounded-full ${ok?'bg-green-500':'bg-red-300/30'}"></div></td>`;
