@@ -6,8 +6,10 @@
     <title>Love 출석 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- PDF 생성을 위한 라이브러리들 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <!-- 한글 깨짐 방지를 위해 html2canvas 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
         .tennis-bg { background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); }
@@ -20,6 +22,9 @@
         .active-btn { background-color: #22c55e !important; color: white !important; border-color: #22c55e !important; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3); }
         .disabled-btn { opacity: 0.2 !important; cursor: not-allowed !important; pointer-events: none !important; }
         .option-btn { cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+        
+        /* PDF 캡처 시 제외할 요소 */
+        .no-print { display: inline-flex; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
@@ -95,7 +100,8 @@
                 </div>
             </div>
             <div class="custom-scroll overflow-auto flex-grow relative">
-                <table id="attendanceTable" class="w-full text-xs text-center border-collapse">
+                <!-- PDF 저장 시 table 요소 자체를 캡처합니다 -->
+                <table id="attendanceTable" class="w-full text-xs text-center border-collapse bg-white">
                     <thead id="tHead" class="sticky top-0 z-30 shadow-sm"></thead>
                     <tbody id="tBody" class="divide-y divide-slate-50"></tbody>
                 </table>
@@ -207,12 +213,43 @@
             }
         };
 
-        window.downloadPDF = () => {
+        // --- 수정된 PDF 다운로드 함수 (html2canvas 기반) ---
+        window.downloadPDF = async () => {
+            const table = document.getElementById('attendanceTable');
             const { jsPDF } = window.jspdf;
-            const docPdf = new jsPDF('l', 'mm', 'a4');
-            docPdf.text('Love Tennis Club Attendance Report', 14, 15);
-            docPdf.autoTable({ html: '#attendanceTable', startY: 20, theme: 'grid', styles: { fontSize: 8 } });
-            docPdf.save(`Love_Attendance_${new Date().toISOString().split('T')[0]}.pdf`);
+            
+            showToast("PDF를 생성 중입니다. 잠시만 기다려주세요...", "blue");
+
+            try {
+                // html2canvas로 테이블을 이미지로 변환 (한글 깨짐 해결)
+                const canvas = await html2canvas(table, {
+                    scale: 2, // 고해상도
+                    useCORS: true,
+                    backgroundColor: "#ffffff",
+                    // 삭제 버튼 아이콘 등 특정 요소 제외 처리
+                    ignoreElements: (el) => el.classList.contains('no-print')
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('l', 'mm', 'a4'); // 가로 모드
+                
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                
+                // 이미지 비율 계산하여 배치
+                const imgWidth = pageWidth - 20; // 좌우 여백 10mm씩
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                pdf.setFontSize(16);
+                pdf.text('Love Tennis Club Attendance Report', 10, 15);
+                pdf.addImage(imgData, 'PNG', 10, 25, imgWidth, imgHeight);
+                
+                pdf.save(`Love_Attendance_${new Date().toISOString().split('T')[0]}.pdf`);
+                showToast("PDF 저장 완료!", "green");
+            } catch (e) {
+                console.error(e);
+                showToast("PDF 생성 중 오류가 발생했습니다.", "red");
+            }
         };
 
         window.confirmDeleteAll = async () => {
@@ -308,7 +345,9 @@
                 let s = `<tr class="bg-slate-100/50"><td colspan="${dates.length+1}" class="p-2 pl-4 text-left font-bold text-slate-500 text-[9px] uppercase">${title}</td></tr>`;
                 list.forEach(m => {
                     s += `<tr class="hover:bg-slate-50 transition-colors"><td class="p-4 sticky-col font-bold text-slate-700 text-xs whitespace-nowrap flex items-center gap-3">
-                        <button onclick="window.deleteMember('${m.mid}', '${m.name}')" class="text-red-300 hover:text-red-600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+                        <button onclick="window.deleteMember('${m.mid}', '${m.name}')" class="text-red-300 hover:text-red-600 no-print">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
                         ${m.name} <span class="text-[9px] text-slate-400 font-normal">(${m.id} | ${m.course} ${m.grade})</span></td>`;
                     dates.forEach(d => {
                         const ok = as.some(a => a.mid === m.mid && a.date === d);
@@ -323,7 +362,7 @@
 
         function showToast(text, color) {
             const msg = document.getElementById('statusMsg'); msg.innerText = text;
-            msg.className = `mt-6 text-center text-sm font-bold block text-${color}-600 animate-pulse`;
+            msg.className = `mt-6 text-center text-sm font-bold block text-${color === 'blue' ? 'blue' : color === 'red' ? 'red' : 'green'}-600 animate-pulse`;
             msg.classList.remove('hidden'); setTimeout(() => msg.classList.add('hidden'), 5000);
         }
     </script>
